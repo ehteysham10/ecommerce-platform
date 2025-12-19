@@ -18,7 +18,8 @@ const userSchema = mongoose.Schema({
 
   avatar: String,
   bio: String,
-  location: String
+  location: String,
+  isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
 // Create Email Verification Token

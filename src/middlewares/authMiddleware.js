@@ -20,6 +20,11 @@ export const protect = async (req, res, next) => {
                 throw new Error('Not authorized, user not found');
             }
 
+            if (req.user.isActive === false) {
+                res.status(403);
+                throw new Error('Your account has been deactivated');
+            }
+
             next();
         } catch (error) {
             console.error(error);

@@ -1,173 +1,148 @@
-Phase 1: Project Setup & Configuration
+💳 PHASE 4.1 — ORDER PAYMENT FLOW (DUMMY STRIPE)
 
-Purpose: Project environment ready karna aur basic server + DB connection setup karna.
+1. Objective
 
-Tasks & Features:
+Implement a payment simulation for orders so that after a buyer places an order, the backend updates the order status based on the payment outcome. This will make the system mimic a real e-commerce payment lifecycle.
 
-Initialize Node.js project (npm init)
+2. Actors & Permissions
+   Roles
 
-Install dependencies:
+Buyer
 
-Express, Mongoose, dotenv, bcrypt, jsonwebtoken, cors, morgan
+Admin (optional for overriding payments)
 
-Setup ES6 modules ("type": "module" in package.json)
+Access Rules
 
-Create .env for environment variables:
+Only authenticated buyers can initiate payment for their orders
 
-PORT, MONGO_URI, JWT_SECRET
+Buyers can only pay for orders they created
 
-Create server.js as main entry point
+Sellers do not handle payment
 
-Setup MongoDB connection (config/db.js)
+Admin can optionally update payment status manually
 
-Setup basic Express server with JSON parser and root test route
+3. Order Payment Entity Requirements
+   Fields
 
-Deliverable: Server running + connected to MongoDB
+orderId (reference Order, required)
 
-Phase 2: Authentication & User Management
+status (enum: pending, confirmed, cancelled)
 
-Purpose: Secure login/signup and role-based access.
+totalAmount (number, required)
 
-Features:
+buyerId (reference User, required)
 
-User Roles: Buyer, Seller, Admin
+paymentMethod (string: stripe-dummy)
 
-User Model: name, email, password, role, timestamps
+createdAt / updatedAt (auto)
 
-APIs:
+Constraints
 
-POST /api/auth/register → register as buyer/seller
+Order status must initially be pending
 
-POST /api/auth/login → login, return JWT + refresh token
+Status can only transition:
 
-POST /api/auth/refresh-token → refresh JWT
+pending → confirmed (payment success)
 
-GET /api/users/me → get logged-in user profile
+pending → cancelled (payment failed)
 
-PATCH /api/users/me → update profile info
+Stock must only be reduced after payment is confirmed
 
-Middlewares:
+Payment must be linked to buyerId and orderId
 
-authMiddleware → verify JWT
+4. APIs & Functional Requirements
+   4.1 Initiate Payment
 
-roleMiddleware → restrict routes based on role
+Endpoint allows buyer to pay for an order
 
-Validation:
+Input: orderId
 
-Email format, password min length
+Validate order exists and belongs to buyer
 
-Security:
+Validate stock availability
 
-Hash password using bcrypt, store JWT securely
+Simulate payment via dummy Stripe keys from environment variables
 
-Deliverable: Fully working auth system with roles
+On payment success:
 
-Phase 3: Products Management
+Update order.status = confirmed
 
-Purpose: Allow sellers to manage products, buyers to browse.
+Reduce product stock
 
-Features:
+On payment failure:
 
-Product Model:
+Update order.status = cancelled
 
-sellerId, name, description, price, category, stock, images, timestamps
+Restore product stock
 
-APIs:
+4.2 Order Status Response
 
-POST /api/products → add product (seller only)
+Endpoint returns updated order status (confirmed or cancelled)
 
-GET /api/products → list all products (filters: category, price, seller)
+Include orderId, status, totalAmount, and payment method in response
 
-GET /api/products/:id → product details
+5. Security & Validation
 
-PATCH /api/products/:id → update product (seller only)
+Buyer must be authenticated
 
-DELETE /api/products/:id → delete product (seller only)
+Buyer cannot pay for orders they don’t own
 
-Validation:
+Payment simulation must respect order stock
 
-Price > 0, stock >= 0, name required
+Status transitions must be strictly enforced
 
-Optional Features:
+Only one payment attempt allowed per order in normal flow
 
-Pagination, sorting, search
+6. Error Handling
 
-Soft delete for products
+Insufficient stock → return validation error
 
-Deliverable: CRUD + list products with filters
+Invalid orderId → return not found error
 
-Phase 4: Orders Management
+Unauthorized buyer → return forbidden error
 
-Purpose: Buyers can place orders, sellers/admin can manage them.
+Payment failure → return status cancelled with reason
 
-Features:
+7. Testing Requirements
 
-Order Model:
+Buyer can create order → status = pending
 
-buyerId, items [{productId, quantity, price}], totalPrice, status, timestamps
+Buyer initiates payment → status updates to confirmed on success
 
-Order Status: pending → confirmed → shipped → delivered → cancelled
+Buyer initiates payment with insufficient stock → status = cancelled
 
-APIs:
+Buyer cannot pay for another buyer’s order
 
-POST /api/orders → create order (buyer only)
+Product stock updated correctly after payment success
 
-GET /api/orders/me → buyer’s order history
+Order status cannot skip stages
 
-PATCH /api/orders/:id/status → update status (seller/admin only)
+8. Documentation Requirements
 
-GET /api/orders → list all orders (admin only)
+Document new endpoint(s) in README.md
 
-Validation:
+Include:
 
-Product exists, stock available, totalPrice calculated automatically
+Endpoint URL and method
 
-Notes:
+Required headers and body
 
-Decrease product stock when order is confirmed
+Response structure
 
-Optional: notification/email when status changes
+Status transitions
 
-Deliverable: Full order system with status tracking
+Mention dummy Stripe keys must be in environment variables
 
-Phase 5: Reviews & Ratings
+9. Phase Completion Criteria
 
-Purpose: Buyers can rate and review products.
+Phase is complete when:
 
-Features:
+Order creation returns pending status
 
-Review Model: productId, buyerId, rating, comment, timestamps
+Payment API simulates Stripe payment
 
-APIs:
+Order status updates correctly (confirmed / cancelled)
 
-POST /api/products/:id/review → add review (buyer only)
+Stock is updated correctly after payment
 
-GET /api/products/:id/reviews → get all reviews
-
-Validation:
-
-Rating: 1–5
-
-One review per buyer per product
-
-Deliverable: Product review system integrated
-
-Phase 6: Admin Dashboard APIs
-
-Purpose: Admin can monitor users, sellers, and orders.
-
-Features:
-
-APIs:
-
-GET /api/admin/users → list all users
-
-GET /api/admin/sellers → list all sellers
-
-GET /api/admin/orders → list all orders
-
-Optional Stats: total users, total sellers, total sales
-
-Role Restriction: Admin only
-
-Deliverable: Admin monitoring endpoints
+API is tested, secure, and documented

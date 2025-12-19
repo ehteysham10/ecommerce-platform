@@ -19,6 +19,14 @@ export const register = asyncHandler(async (req, res) => {
 
   email = email.trim().toLowerCase();
 
+  // Security: Only allow 'buyer' or 'seller' roles via public registration
+  // If user tries to become admin, default them to 'buyer'
+  if (role && role !== 'buyer' && role !== 'seller') {
+    role = 'buyer';
+  }
+  // Default to buyer if not specified
+  role = role || 'buyer';
+
   if (!strongPassword(password))
     return res.status(400).json({
       message:
@@ -105,6 +113,7 @@ export const login = asyncHandler(async (req, res) => {
   if (!user || !user.password)
     return res.status(400).json({ message: "Invalid credentials" });
   if (!user.emailVerified) return res.status(400).json({ message: "Email not verified" });
+  if (user.isActive === false) return res.status(403).json({ message: "Your account has been deactivated. Please contact support." });
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(400).json({ message: "Invalid credentials" });

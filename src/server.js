@@ -32,29 +32,30 @@ app.use(express.urlencoded({ extended: true })); // Allow form data
 app.use(cors());
 app.use(helmet());
 
-// Log Body AFTER parsing
 app.use((req, res, next) => {
-    if (req.body) {
+    if (req.body && Object.keys(req.body).length > 0) {
         console.log('Parsed Body:', JSON.stringify(req.body));
     }
     next();
 });
-
-if (process.env.NODE_ENV === 'development') {
-    app.use(morgan('dev'));
-}
 
 // Routes
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
 
-// Import Routes
-import authRoutes from './routes/authRoutes.js';
-import userRoutes from './routes/userRoutes.js';
+// Health Check
+import { getHealth } from './controllers/healthController.js';
+app.get('/api/health', getHealth);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
+// Master v1 Router
+import v1Routes from './routes/v1.js';
+app.use('/api/v1', v1Routes);
+
+// Uploads static folder
+import path from 'path';
+const __dirname = path.resolve();
+app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
 
 // Error Handling
